@@ -1,15 +1,18 @@
-import type {ILoginType} from "./types.ts";
+import type {ILoginResponse, ILoginType} from "./types.ts";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {loginSchema} from "./validate.ts";
 import clsx from "clsx";
 import api from "../../api/axiosInstance.ts";
+import {useNavigate} from "react-router";
 
 const LoginPage = () => {
     const defaultValues : ILoginType ={
         email: "",
         password: ""
     }
+
+    const navigate = useNavigate();
 
     const {
         register,
@@ -25,8 +28,11 @@ const LoginPage = () => {
     const onSubmit = async (data: ILoginType) => {
         console.log("Submit data server", data);
         try {
-            const result = await api.post("/account/login", data);
-            console.log("Result login ", result);
+            const result = await api.post<ILoginResponse>("/account/login", data);
+            localStorage.setItem("auth", result.data.token);
+            navigate("/"); //переходимо на головну
+
+            // console.log("Result login ", result);
         }
         catch (error) {
             console.log("У нас проблеми Хюстон", error);

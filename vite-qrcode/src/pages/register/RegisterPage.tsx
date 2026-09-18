@@ -2,8 +2,14 @@ import {useForm} from "react-hook-form";
 import type {IRegisterType} from "./types.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {registerSchema} from "./validate.ts";
+import {useState} from "react";
+import api from "../../api/axiosInstance.ts";
+import type {ILoginResponse} from "../login/types.ts";
+import {useNavigate} from "react-router";
 
 const RegisterPage = () => {
+
+    const [preview, setPreview] = useState<string | null>(null);
 
     const defaultValues : IRegisterType ={
         firstName: "",
@@ -11,11 +17,13 @@ const RegisterPage = () => {
         email: "",
         password: "",
         confirmPassword: "",
+        imageFile: null
     }
 
     const {
         register,
         handleSubmit,
+        setValue, //Для запису даних у react-hook-form
         // reset,
         formState: {errors, /*isDirty*/}, //Якщо є помилки
     } = useForm<IRegisterType>({
@@ -23,8 +31,39 @@ const RegisterPage = () => {
         defaultValues
     });
 
-    const onSubmit = (data: IRegisterType) => {
-        console.log("Submit data server", data);
+    const navigate = useNavigate();
+
+    const onSubmit = async (data: IRegisterType) => {
+        // console.log("Submit data server", data);
+        try {
+            const result = await api.post<ILoginResponse>("/account/register", data,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                });
+            localStorage.setItem("auth", result.data.token);
+            navigate("/"); //переходимо на головну
+
+            // console.log("Result login ", result);
+        }
+        catch (error) {
+            console.log("У нас проблеми Хюстон", error);
+            //setError("root", { message: "Дані вказано не вірно" }); //Записуємо помиклу, що дані вказано не вірно
+        }
+    }
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+
+        setValue("imageFile", file, { shouldValidate: true });
+
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setPreview(url);
+        } else {
+            setPreview(null);
+        }
     }
 
     return (
@@ -34,6 +73,34 @@ const RegisterPage = () => {
                     <h1 className="text-2xl font-bold text-center text-gray-900">Реєстрація</h1>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-300 bg-gray-100 flex items-center justify-center">
+                                {preview ? (
+                                    <img
+                                        src={preview}
+                                        alt="Прев'ю аватару"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-xs text-gray-400">Фото</span>
+                                )}
+                            </div>
+
+                            <label className="text-sm font-medium text-indigo-600 cursor-pointer hover:text-indigo-700">
+                                Обрати зображення
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                />
+                            </label>
+
+                            {errors.imageFile && (
+                                <div className="text-red-700 text-sm">{errors.imageFile.message}</div>
+                            )}
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ім'я</label>
                             <input

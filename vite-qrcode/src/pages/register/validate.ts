@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export const registerSchema = z
     .object({
         firstName: z
@@ -15,11 +18,24 @@ export const registerSchema = z
 
         password: z
             .string()
-            .min(8, "Пароль повинен містити мінімум 8 символів"),
+            .min(6, "Пароль повинен містити мінімум 6 символів"),
 
         confirmPassword: z
             .string()
             .min(1, "Підтвердіть пароль"),
+
+        imageFile: z
+            .instanceof(File, { message: "Оберіть файл зображення" })
+            .nullable()
+            .refine((file) => file !== null, "Зображення обов'язкове")
+            .refine(
+                (file) => !file || file.size <= MAX_FILE_SIZE,
+                "Максимальний розмір файлу — 5MB"
+            )
+            .refine(
+                (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+                "Дозволені формати: JPEG, PNG, WEBP"
+            ),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Паролі не співпадають",

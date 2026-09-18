@@ -1,0 +1,10 @@
+Дані із форми входу відправити на сервер.
+Ось вигля запиту.
+curl -X 'POST' \
+  'http://localhost:5124/api/Account/Login' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "string",
+  "password": "string"
+}'

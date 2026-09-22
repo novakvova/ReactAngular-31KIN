@@ -5,8 +5,12 @@ import {loginSchema} from "./validate.ts";
 import clsx from "clsx";
 import api from "../../api/axiosInstance.ts";
 import {useNavigate} from "react-router";
+import {useAuth} from "../../context/AuthContext.tsx";
 
 const LoginPage = () => {
+
+    const { login } = useAuth();
+
     const defaultValues : ILoginType ={
         email: "",
         password: ""
@@ -29,7 +33,8 @@ const LoginPage = () => {
         console.log("Submit data server", data);
         try {
             const result = await api.post<ILoginResponse>("/account/login", data);
-            localStorage.setItem("auth", result.data.token);
+            login(result.data.token);
+            //localStorage.setItem("auth", result.data.token);
             navigate("/"); //переходимо на головну
 
             // console.log("Result login ", result);

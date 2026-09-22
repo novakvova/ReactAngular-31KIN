@@ -6,8 +6,11 @@ import {useState} from "react";
 import api from "../../api/axiosInstance.ts";
 import type {ILoginResponse} from "../login/types.ts";
 import {useNavigate} from "react-router";
+import {useAuth} from "../../context/AuthContext.tsx";
 
 const RegisterPage = () => {
+
+    const { login } = useAuth();
 
     const [preview, setPreview] = useState<string | null>(null);
 
@@ -42,7 +45,8 @@ const RegisterPage = () => {
                         "Content-Type": "multipart/form-data",
                     },
                 });
-            localStorage.setItem("auth", result.data.token);
+            //localStorage.setItem("auth", result.data.token);
+            login(result.data.token);
             navigate("/"); //переходимо на головну
 
             // console.log("Result login ", result);

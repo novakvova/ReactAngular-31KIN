@@ -1,4 +1,35 @@
+import {useEffect, useState} from "react";
+import api from "../../api/axiosInstance.ts";
+import type {IProfile} from "./types.ts";
+
 const ProfilePage = () => {
+
+    const [profile, setProfile] = useState<IProfile>({
+        id: 0,
+        email: "",
+        lastName: "",
+        firstName: "",
+        roles: [],
+        image: ""
+    });
+
+    //UseEffect - спрацьовує після render page - відображення
+    useEffect(() => {
+        const getProfile = async () => {
+            try {
+                //Read data from server
+                const result =
+                    await api.get<IProfile>("/account/profile");
+                setProfile(result.data);
+                // console.log(result.data);
+            }
+            catch (ex) {
+                console.log("Щось пішло не так", ex);
+            }
+        };
+        getProfile(); //запускаємо асинхрону задачу на js
+    }, []); // Спрацює 1 раз після відображення сторінки
+
     return (
         <div className="max-w-3xl mx-auto px-4 py-8">
             <h1 className="text-center text-3xl font-bold text-gray-900 mb-8">
@@ -45,6 +76,7 @@ const ProfilePage = () => {
                         <input
                             id="firstName"
                             type="text"
+                            value={profile.firstName}
                             placeholder="Введіть ім'я"
                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
                         />
@@ -61,6 +93,7 @@ const ProfilePage = () => {
 
                         <input
                             id="lastName"
+                            value={profile.lastName}
                             type="text"
                             placeholder="Введіть прізвище"
                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
@@ -79,94 +112,13 @@ const ProfilePage = () => {
                         <input
                             id="email"
                             type="email"
+                            value={profile.email}
                             placeholder="example@gmail.com"
                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
                         />
                     </div>
 
-                    {/* Телефон */}
-                    <div>
-                        <label
-                            htmlFor="phone"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Телефон
-                        </label>
 
-                        <input
-                            id="phone"
-                            type="tel"
-                            placeholder="+380 67 123 45 67"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
-                        />
-                    </div>
-
-                    {/* Дата народження */}
-                    <div>
-                        <label
-                            htmlFor="birthDate"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Дата народження
-                        </label>
-
-                        <input
-                            id="birthDate"
-                            type="date"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
-                        />
-                    </div>
-
-                    {/* Місто */}
-                    <div>
-                        <label
-                            htmlFor="city"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Місто
-                        </label>
-
-                        <input
-                            id="city"
-                            type="text"
-                            placeholder="Рівне"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
-                        />
-                    </div>
-
-                    {/* Адреса */}
-                    <div className="md:col-span-2">
-                        <label
-                            htmlFor="address"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Адреса
-                        </label>
-
-                        <input
-                            id="address"
-                            type="text"
-                            placeholder="Введіть адресу"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
-                        />
-                    </div>
-
-                    {/* Про себе */}
-                    <div className="md:col-span-2">
-                        <label
-                            htmlFor="about"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Про себе
-                        </label>
-
-                        <textarea
-                            id="about"
-                            rows={4}
-                            placeholder="Розкажіть трохи про себе..."
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition resize-none"
-                        />
-                    </div>
                 </div>
 
                 {/* Кнопки */}

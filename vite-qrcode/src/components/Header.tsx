@@ -23,9 +23,9 @@ const Header = () => {
             <div className="flex items-center gap-3">
                 {isAuthenticated ? (
                     <>
-                        <span className="text-sm text-gray-700">
+                        <Link to={"/profile"} className="text-sm text-gray-700">
                             {email}
-                        </span>
+                        </Link>
 
                         <button
                             onClick={handleLogout}

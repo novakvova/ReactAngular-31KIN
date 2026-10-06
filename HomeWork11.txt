@@ -1,0 +1,6 @@
+Зробити сторінку на React TypeScript для ствоврення
+QRCodes
+Бажано, щоб взаємодіяла із сервером
+https://qrcode31kn-api.itstep.click/api/QrCodes
+пост запитом.
+Якщо не виде допоможу на парі.

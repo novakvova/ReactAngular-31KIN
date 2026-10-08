@@ -1,58 +1,77 @@
-import {useEffect, useState} from "react";
-import type {IPagedResult, IUser} from "./types.ts";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { IPagedResult, IUser } from "./types.ts";
 import api from "../../api/axiosInstance.ts";
+import { searchSchema, searchDefaultValues, type ISearchType } from "./searchSchema.ts";
 
 const PAGE_SIZE = 10;
 
 const HomePage = () => {
-
-    //Список наших користувачів
     const [users, setUsers] = useState<IUser[]>([]);
-    //Поточна сторінка та дані пагінації
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [totalCount, setTotalCount] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    //Даний метод спрацьовує коли компонент зрендерився
-    // useEffect(() => {
-    //     api.get<IPagedResult<IUser>>("/Users")
-    //         .then(response =>
-    //         {
-    //             console.log("Дані від сервера",response.data);
-    //             setUsers(response.data.items); //зберігаємо в компонент дані
-    //         })
-    //         .catch(ex => {
-    //             console.log("У нас проблеми Хюстон", ex)
-    //         });
-    //     console.log("Home page mounted");
-    // },[]);
 
-    //Спрацьовує при монтуванні і щоразу, коли змінюється page
+    // Фільтри, які ЗАСТОСОВАНІ до запиту (змінюються лише після натискання "Шукати")
+    const [filters, setFilters] = useState<ISearchType>(searchDefaultValues);
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isDirty },
+    } = useForm<ISearchType>({
+        resolver: zodResolver(searchSchema),
+        defaultValues: searchDefaultValues,
+    });
+
+    // Спрацьовує при зміні сторінки або застосованих фільтрів
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
 
+        // Передаємо на сервер тільки непусті поля
+        const params: Record<string, string | number> = { page, pageSize: PAGE_SIZE };
+        if (filters.firstName) params.firstName = filters.firstName;
+        if (filters.lastName) params.lastName = filters.lastName;
+        if (filters.email) params.email = filters.email;
+
         api.get<IPagedResult<IUser>>("/Users", {
-            params: { page, pageSize: PAGE_SIZE },
-            signal: controller.signal
+            params,
+            signal: controller.signal,
         })
             .then(response => {
-                console.log("Дані від сервера", response.data);
                 setUsers(response.data.items);
                 setTotalPages(response.data.totalPages);
                 setTotalCount(response.data.totalCount);
                 setLoading(false);
             })
             .catch(ex => {
-                if (ex.name === "CanceledError") return; // запит скасовано — це не помилка
+                if (ex.name === "CanceledError") return;
                 console.log("У нас проблеми Хюстон", ex);
                 setLoading(false);
             });
 
-        return () => controller.abort(); // скасувати старий запит при зміні сторінки
-    }, [page]);
+        return () => controller.abort();
+    }, [page, filters]);
 
-    //Список номерів сторінок з "..." для великої кількості сторінок
+    // Натиснули "Шукати"
+    const onSearch = (data: ISearchType) => {
+        setFilters(data); // нові фільтри
+        setPage(1);       // пошук завжди починаємо з першої сторінки
+    };
+
+    // Натиснули "Скинути"
+    const onReset = () => {
+        reset(searchDefaultValues);
+        setFilters(searchDefaultValues);
+        setPage(1);
+    };
+
+    const hasActiveFilters = Object.values(filters).some(v => v !== "");
+
     const getPageNumbers = (): (number | "...")[] => {
         if (totalPages <= 7) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -73,12 +92,73 @@ const HomePage = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    console.log("Home page rendered");
+    const inputClass =
+        "w-full px-3 py-2 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
     return (
         <>
             <div className="max-w-xl mx-auto mt-4 px-4 font-sans">
                 <h1 className="text-center text-2xl font-bold mb-6">Список користувачів</h1>
+
+                {/* Панель пошуку */}
+                <form
+                    onSubmit={handleSubmit(onSearch)}
+                    className="mb-6 p-4 bg-white rounded-lg shadow space-y-3"
+                    noValidate
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <input
+                                {...register("firstName")}
+                                placeholder="Ім'я"
+                                className={inputClass}
+                            />
+                            {errors.firstName && (
+                                <p className="text-xs text-red-500 mt-1">{errors.firstName.message}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <input
+                                {...register("lastName")}
+                                placeholder="Прізвище"
+                                className={inputClass}
+                            />
+                            {errors.lastName && (
+                                <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <input
+                            {...register("email")}
+                            placeholder="Email"
+                            className={inputClass}
+                        />
+                        {errors.email && (
+                            <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            disabled={loading || (!isDirty && !hasActiveFilters)}
+                            className="px-4 py-2 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            Скинути
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            Шукати
+                        </button>
+                    </div>
+                </form>
 
                 <ul className={`space-y-3 transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
                     {users.map(user => (
@@ -154,6 +234,6 @@ const HomePage = () => {
             </div>
         </>
     );
-}
+};
 
 export default HomePage;

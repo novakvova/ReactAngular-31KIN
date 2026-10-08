@@ -40,17 +40,25 @@ const ProfilePage = () => {
                 {/* Аватар */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-3">
-                        <svg
-                            className="w-12 h-12 text-gray-400"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-9 9a9 9 0 1 1 18 0H3Z"
-                                clipRule="evenodd"
+                        {profile.image ? (
+                            <img
+                                src={`${import.meta.env.VITE_API_URL}/myimages/${profile.image}_432.webp`}
+                                alt={profile.firstName}
+                                className="w-full h-full object-cover"
                             />
-                        </svg>
+                        ) : (
+                            <svg
+                                className="w-12 h-12 text-gray-400"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-9 9a9 9 0 1 1 18 0H3Z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        )}
                     </div>
 
                     <button

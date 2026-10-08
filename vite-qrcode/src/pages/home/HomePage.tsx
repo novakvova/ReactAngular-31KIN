@@ -1,21 +1,37 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router"; // у React Router v7: "react-router"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { IPagedResult, IUser } from "./types.ts";
 import api from "../../api/axiosInstance.ts";
-import { searchSchema, searchDefaultValues, type ISearchType } from "./searchSchema.ts";
+import { searchSchema, type ISearchType } from "./searchSchema.ts";
 
 const PAGE_SIZE = 10;
 
+// Збираємо query-рядок: у URL потрапляють тільки непусті поля,
+// page - тільки якщо більша за 1 (щоб адреса була чистою)
+const buildParams = (filters: ISearchType, page: number): URLSearchParams => {
+    const params = new URLSearchParams();
+    if (filters.firstName) params.set("firstName", filters.firstName);
+    if (filters.lastName) params.set("lastName", filters.lastName);
+    if (filters.email) params.set("email", filters.email);
+    if (page > 1) params.set("page", String(page));
+    return params;
+};
+
 const HomePage = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Читаємо стан з URL
+    const firstName = searchParams.get("firstName") ?? "";
+    const lastName = searchParams.get("lastName") ?? "";
+    const email = searchParams.get("email") ?? "";
+    const page = Math.max(parseInt(searchParams.get("page") ?? "1", 10) || 1, 1);
+
     const [users, setUsers] = useState<IUser[]>([]);
-    const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [totalCount, setTotalCount] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-
-    // Фільтри, які ЗАСТОСОВАНІ до запиту (змінюються лише після натискання "Шукати")
-    const [filters, setFilters] = useState<ISearchType>(searchDefaultValues);
 
     const {
         register,
@@ -24,28 +40,45 @@ const HomePage = () => {
         formState: { errors, isDirty },
     } = useForm<ISearchType>({
         resolver: zodResolver(searchSchema),
-        defaultValues: searchDefaultValues,
+        // Початкові значення форми беремо з URL
+        defaultValues: { firstName, lastName, email },
     });
 
-    // Спрацьовує при зміні сторінки або застосованих фільтрів
+    // Синхронізуємо форму з URL: спрацьовує при кнопках "Назад/Вперед"
+    // або коли користувач відкрив/вставив нове посилання
+    useEffect(() => {
+        reset({ firstName, lastName, email });
+    }, [firstName, lastName, email, reset]);
+
+    // Завантаження даних при зміні будь-якого параметра URL
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
 
-        // Передаємо на сервер тільки непусті поля
         const params: Record<string, string | number> = { page, pageSize: PAGE_SIZE };
-        if (filters.firstName) params.firstName = filters.firstName;
-        if (filters.lastName) params.lastName = filters.lastName;
-        if (filters.email) params.email = filters.email;
+        if (firstName) params.firstName = firstName;
+        if (lastName) params.lastName = lastName;
+        if (email) params.email = email;
 
         api.get<IPagedResult<IUser>>("/Users", {
             params,
             signal: controller.signal,
         })
             .then(response => {
-                setUsers(response.data.items);
-                setTotalPages(response.data.totalPages);
-                setTotalCount(response.data.totalCount);
+                const { items, totalPages: tp, totalCount: tc } = response.data;
+
+                // Якщо в посиланні вказана неіснуюча сторінка - переносимо на останню
+                if (tp > 0 && page > tp) {
+                    setSearchParams(
+                        buildParams({ firstName, lastName, email }, tp),
+                        { replace: true } // не засмічуємо історію браузера
+                    );
+                    return;
+                }
+
+                setUsers(items);
+                setTotalPages(tp);
+                setTotalCount(tc);
                 setLoading(false);
             })
             .catch(ex => {
@@ -55,22 +88,19 @@ const HomePage = () => {
             });
 
         return () => controller.abort();
-    }, [page, filters]);
+    }, [page, firstName, lastName, email, setSearchParams]);
 
-    // Натиснули "Шукати"
+    // Натиснули "Шукати": пишемо фільтри в URL, сторінка скидається на 1
     const onSearch = (data: ISearchType) => {
-        setFilters(data); // нові фільтри
-        setPage(1);       // пошук завжди починаємо з першої сторінки
+        setSearchParams(buildParams(data, 1));
     };
 
-    // Натиснули "Скинути"
+    // Натиснули "Скинути": чистимо URL
     const onReset = () => {
-        reset(searchDefaultValues);
-        setFilters(searchDefaultValues);
-        setPage(1);
+        setSearchParams({});
     };
 
-    const hasActiveFilters = Object.values(filters).some(v => v !== "");
+    const hasActiveFilters = Boolean(firstName || lastName || email);
 
     const getPageNumbers = (): (number | "...")[] => {
         if (totalPages <= 7) {
@@ -88,7 +118,8 @@ const HomePage = () => {
 
     const changePage = (newPage: number) => {
         if (newPage < 1 || newPage > totalPages || newPage === page) return;
-        setPage(newPage);
+        // Беремо ЗАСТОСОВАНІ фільтри з URL, а не з форми (там можуть бути ненатиснуті зміни)
+        setSearchParams(buildParams({ firstName, lastName, email }, newPage));
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 

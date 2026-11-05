@@ -80,3 +80,12 @@ ng g c features/home/pages/home --type=component
 
 
 ```
+
+## Робота над тестами
+```
+ng generate service core/services/test-storage.service
+
+ng g c features/tests/pages/test-list --type=component
+ng g c features/tests/pages/test-create --type=component
+
+```

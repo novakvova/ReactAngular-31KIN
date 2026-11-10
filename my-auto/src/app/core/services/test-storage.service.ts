@@ -1,8 +1,10 @@
 import { Service } from '@angular/core';
-import { AnswerOptionEntity,
+import {
+  AnswerOptionEntity,
   QuestionEntity,
   TestAttemptEntity,
-  TestEntity } from '@/features/tests/models';
+  TestEntity,
+} from '@/features/tests/models';
 
 type SeqName = 'test' | 'question' | 'option' | 'attempt';
 
@@ -18,6 +20,10 @@ export class TestStorageService {
     return this.read<unknown[]>(this.testsKey, [])
       .map((raw) => this.reviveTest(raw))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  hasTests(): boolean {
+    return this.read<unknown[]>(this.testsKey, []).length > 0;
   }
 
   getById(id: number): TestEntity | undefined {

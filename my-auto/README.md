@@ -89,6 +89,8 @@ ng g c features/tests/pages/test-list --type=component
 ng g c features/tests/pages/test-create --type=component
 ng g c features/tests/pages/test-take --type=component
 
+ng generate service core/services/test-seed.service
+
 ```
 
 ## Налаштування Claude Code у проект ствимо черех PowerShell

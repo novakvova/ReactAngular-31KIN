@@ -1,9 +1,13 @@
+import {Route, Routes} from "react-router";
+import HomePage from "./pages/HomePage.tsx";
 
 function App() {
 
   return (
     <>
-      <h1 className={"text-center text-lg font-bold"}>Привіт React</h1>
+        <Routes>
+            <Route path="/" element={<HomePage/>} />
+        </Routes>
     </>
   )
 }

@@ -1,4 +1,4 @@
-import {Outlet} from "react-router";
+import {Link, NavLink, Outlet} from "react-router";
 
 const MainLayout = () => {
     return (
@@ -6,7 +6,7 @@ const MainLayout = () => {
             <div className="pdr-app">
                 <nav className="navbar navbar-expand-md pdr-navbar" data-bs-theme="dark">
                     <div className="container">
-                        <a className="navbar-brand fw-bold" href="#top">🚗 ПДР Підготовка</a>
+                        <Link className="navbar-brand fw-bold" to="/">🚗 ПДР Підготовка</Link>
                         <button
                             className="navbar-toggler"
                             type="button"
@@ -20,9 +20,8 @@ const MainLayout = () => {
                         </button>
                         <div className="collapse navbar-collapse" id="pdrMenu">
                             <ul className="navbar-nav ms-auto">
-                                <li className="nav-item"><a className="nav-link active" href="#top">Головна</a></li>
-                                <li className="nav-item"><a className="nav-link" href="#topics">Розділи</a></li>
-                                <li className="nav-item"><a className="nav-link" href="#tips">Поради</a></li>
+                                <li className="nav-item"><NavLink className="nav-link" to="/" end>Головна</NavLink></li>
+                                <li className="nav-item"><NavLink className="nav-link" to="/tests">Тести</NavLink></li>
                             </ul>
                         </div>
                     </div>

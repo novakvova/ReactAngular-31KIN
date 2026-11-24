@@ -1,0 +1,12 @@
+/* Сторінка тестів ПДР */
+
+.pdr-test-number {
+  min-width: 2.5rem;
+}
+
+.pdr-test-card {
+  background: #1e1e1e;
+  border: 1px solid #3a3d42;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}

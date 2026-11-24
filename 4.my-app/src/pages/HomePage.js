@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 const HomePage = () => {
 
     const topics = [
@@ -29,7 +31,7 @@ const HomePage = () => {
                         Займайся зручно — з телефона чи комп'ютера.
                     </p>
                     <div className="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4">
-                        <button type="button" className="btn btn-primary btn-lg px-4">Почати тест</button>
+                        <Link to="/tests" className="btn btn-primary btn-lg px-4">Почати тест</Link>
                         <a href="#topics" className="btn btn-outline-light btn-lg px-4">Переглянути розділи</a>
                     </div>
                 </div>

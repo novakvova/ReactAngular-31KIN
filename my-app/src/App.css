@@ -1,0 +1,75 @@
+/* ---------- Головна сторінка: підготовка до ПДР ---------- */
+
+.pdr-app {
+  min-height: 100vh;
+  background: #121212;
+}
+
+/* Навбар */
+.pdr-navbar {
+  background: #1a1a1a;
+  border-bottom: 1px solid #2c2f34;
+}
+
+.pdr-navbar .navbar-brand {
+  color: #f5f6f7;
+}
+
+/* Героїчний блок з градієнтом */
+.pdr-hero {
+  background: linear-gradient(135deg, #0d2b4d 0%, #1b4f7a 55%, #2a6f4f 100%);
+  color: #f5f6f7;
+}
+
+.pdr-hero h1 {
+  color: #ffffff;
+}
+
+.pdr-lead {
+  max-width: 640px;
+  color: #d6e4f0;
+}
+
+.pdr-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-weight: 500;
+  padding: 0.5em 1em;
+}
+
+/* Блоки статистики */
+.pdr-stat {
+  background: #1e1e1e;
+  border: 1px solid #3a3d42;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1rem;
+}
+
+/* Картки тем */
+.pdr-card {
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.pdr-card:hover {
+  transform: translateY(-4px);
+  border-color: #4d9fff;
+}
+
+/* Блок порад */
+.pdr-tips {
+  background: #1e1e1e;
+  border: 1px solid #3a3d42;
+  border-left: 4px solid #3ddc84;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdr-card {
+    transition: none;
+  }
+
+  .pdr-card:hover {
+    transform: none;
+  }
+}

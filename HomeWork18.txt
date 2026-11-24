@@ -1,0 +1,3 @@
+На проект додати головне меню і зробити кнопки навігації по сайту
+https://github.com/novakvova/ReactAngular-31KIN/tree/main/my-auto
+Усім позитивчику і добра.

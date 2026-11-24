@@ -1,0 +1,11 @@
+Написати призначення кожної із бібліотек
+@hookform/resolvers 
+@react-oauth/google 
+@reduxjs/toolkit 
+jwt-decode 
+object-to-formdata 
+prettier 
+react-hook-form 
+react-redux 
+react-router zod 
+Усім гарного настрою та позитивчику

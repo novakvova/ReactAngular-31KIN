@@ -9,6 +9,9 @@
 .pdr-navbar {
   background: #1a1a1a;
   border-bottom: 1px solid #2c2f34;
+  --bs-navbar-color: rgba(255, 255, 255, 0.85);
+  --bs-navbar-hover-color: #ffffff;
+  --bs-navbar-active-color: #ffffff;
 }
 
 .pdr-navbar .navbar-brand {

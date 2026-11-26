@@ -1,0 +1,276 @@
+Написати пояснення по коду сторінки TestsPage.js
+import { useCallback, useEffect, useState } from 'react';
+import './TestsPage.css';
+
+const TESTS_URL = `${process.env.PUBLIC_URL}/tests/questions.json`;
+const IMAGES_URL = `${process.env.PUBLIC_URL}/tests/images`;
+const EXAM_SECONDS = 20 * 60;
+const PASS_SCORE = 18;
+
+const formatTime = (seconds) => {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${m}:${s}`;
+};
+
+const TestsPage = () => {
+    const [questions, setQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const [current, setCurrent] = useState(0);
+    const [selected, setSelected] = useState(null);
+    const [answers, setAnswers] = useState([]);
+    const [timeLeft, setTimeLeft] = useState(EXAM_SECONDS);
+    const [finished, setFinished] = useState(false);
+
+    const loadQuestions = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(TESTS_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            setQuestions(data);
+            setAnswers(new Array(data.length).fill(null));
+            setCurrent(0);
+            setSelected(null);
+            setTimeLeft(EXAM_SECONDS);
+            setFinished(false);
+        } catch {
+            setError('Не вдалося завантажити питання.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadQuestions();
+    }, [loadQuestions]);
+
+    useEffect(() => {
+        if (loading || error || finished) {
+            return undefined;
+        }
+        const timer = setInterval(() => {
+            setTimeLeft((t) => Math.max(t - 1, 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [loading, error, finished]);
+
+    useEffect(() => {
+        if (timeLeft === 0) {
+            setFinished(true);
+        }
+    }, [timeLeft]);
+
+    const goTo = (index) => {
+        setCurrent(index);
+        setSelected(null);
+    };
+
+    // Next question without an answer, searching forward from `from` and wrapping around.
+    const nextUnanswered = (list, from) => {
+        for (let step = 1; step <= list.length; step++) {
+            const index = (from + step) % list.length;
+            if (list[index] === null) {
+                return index;
+            }
+        }
+        return -1;
+    };
+
+    const handleChoose = () => {
+        if (selected === null) {
+            return;
+        }
+        const updated = [...answers];
+        updated[current] = selected;
+        setAnswers(updated);
+
+        const next = nextUnanswered(updated, current);
+        if (next === -1) {
+            setFinished(true);
+        } else {
+            goTo(next);
+        }
+    };
+
+    const handleSkip = () => {
+        const next = nextUnanswered(answers, current);
+        if (next !== -1) {
+            goTo(next);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="container py-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Завантаження…</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container py-5">
+                <div className="alert alert-danger d-flex justify-content-between align-items-center">
+                    <span>{error}</span>
+                    <button type="button" className="btn btn-outline-light btn-sm" onClick={loadQuestions}>
+                        Повторити
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const isCorrect = (index) => answers[index] === questions[index].correct;
+    const correctCount = questions.filter((_, i) => isCorrect(i)).length;
+
+    if (finished) {
+        const passed = correctCount >= PASS_SCORE;
+        return (
+            <div className="container py-5">
+                <div className={`alert ${passed ? 'alert-success' : 'alert-danger'}`}>
+                    <h1 className="h3 fw-bold mb-2">{passed ? 'Іспит складено!' : 'Іспит не складено'}</h1>
+                    <p className="mb-0">
+                        Правильних відповідей: <strong>{correctCount}</strong> з {questions.length}.
+                        Для успішного складання потрібно щонайменше {PASS_SCORE}.
+                    </p>
+                </div>
+
+                <h2 className="h5 fw-bold mt-4 mb-3">Розбір відповідей</h2>
+                <ol className="list-group list-group-numbered mb-4">
+                    {questions.map((q, i) => (
+                        <li className="list-group-item" key={q.id}>
+                            <div className="fw-semibold mb-1">{q.question}</div>
+                            {answers[i] === null ? (
+                                <div className="text-warning">Без відповіді</div>
+                            ) : (
+                                <div className={isCorrect(i) ? 'text-success' : 'text-danger'}>
+                                    Ваша відповідь: {q.answers[answers[i]]}
+                                </div>
+                            )}
+                            {!isCorrect(i) && (
+                                <div className="text-muted">Правильна відповідь: {q.answers[q.correct]}</div>
+                            )}
+                        </li>
+                    ))}
+                </ol>
+
+                <button type="button" className="btn btn-primary btn-lg" onClick={loadQuestions}>
+                    Пройти ще раз
+                </button>
+            </div>
+        );
+    }
+
+    const question = questions[current];
+    const answered = answers[current] !== null;
+
+    const answerClass = (index) => {
+        if (!answered) {
+            return selected === index ? 'active' : '';
+        }
+        if (index === question.correct) {
+            return 'list-group-item-success';
+        }
+        if (index === answers[current]) {
+            return 'list-group-item-danger';
+        }
+        return '';
+    };
+
+    const numberClass = (index) => {
+        if (index === current) {
+            return 'btn-primary';
+        }
+        if (answers[index] === null) {
+            return 'btn-outline-secondary';
+        }
+        return isCorrect(index) ? 'btn-success' : 'btn-danger';
+    };
+
+    return (
+        <div className="container py-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h1 className="h4 fw-bold mb-0">Іспит, як у сервісному центрі</h1>
+                <span className={`fs-4 fw-semibold ${timeLeft < 60 ? 'text-danger' : ''}`} aria-label="Залишок часу">
+                    {formatTime(timeLeft)}
+                </span>
+            </div>
+
+            <div className="d-flex flex-wrap gap-2 mb-4">
+                {questions.map((q, i) => (
+                    <button
+                        type="button"
+                        key={q.id}
+                        className={`btn btn-sm pdr-test-number ${numberClass(i)}`}
+                        onClick={() => goTo(i)}
+                        aria-label={`Питання ${i + 1}`}
+                    >
+                        {i + 1}
+                    </button>
+                ))}
+            </div>
+
+            <div className="pdr-test-card">
+                <h2 className="h5 mb-3">{question.question}</h2>
+                <div className="row g-4">
+                    {question.image && (
+                        <div className="col-12 col-lg-6">
+                            <img
+                                src={`${IMAGES_URL}/${question.image}`}
+                                alt={`Ілюстрація до питання ${current + 1}`}
+                                className="img-fluid rounded"
+                            />
+                        </div>
+                    )}
+                    <div className={question.image ? 'col-12 col-lg-6' : 'col-12'}>
+                        <div className="list-group mb-4">
+                            {question.answers.map((answer, i) => (
+                                <button
+                                    type="button"
+                                    key={answer}
+                                    className={`list-group-item list-group-item-action ${answerClass(i)}`}
+                                    onClick={() => setSelected(i)}
+                                    disabled={answered}
+                                >
+                                    {answer}
+                                </button>
+                            ))}
+                        </div>
+
+                        {!answered && (
+                            <div className="d-flex justify-content-between gap-3">
+                                <button type="button" className="btn btn-outline-light btn-lg px-4" onClick={handleSkip}>
+                                    Пропустити
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-success btn-lg px-4"
+                                    onClick={handleChoose}
+                                    disabled={selected === null}
+                                >
+                                    Обрати
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="text-end mt-3">
+                <button type="button" className="btn btn-link" onClick={() => setFinished(true)}>
+                    Завершити іспит
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export default TestsPage;

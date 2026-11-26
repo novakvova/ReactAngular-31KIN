@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import './TestsPage.css';
 
+import axios from 'axios';
+//Адреса файлу із питаннями
 const TESTS_URL = `${process.env.PUBLIC_URL}/tests/questions.json`;
+//Адреса папки із фото
 const IMAGES_URL = `${process.env.PUBLIC_URL}/tests/images`;
-const EXAM_SECONDS = 20 * 60;
-const PASS_SCORE = 18;
-
+const EXAM_SECONDS = 20 * 60; //то хв на тест
+const PASS_SCORE = 18; //Кількість правильних відповідей
+//Для перетворення секуд на хвилини та секунди тобто форма 00:00
 const formatTime = (seconds) => {
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
     const s = String(seconds % 60).padStart(2, '0');
@@ -13,31 +16,51 @@ const formatTime = (seconds) => {
 };
 
 const TestsPage = () => {
+    //Список питаннь у тесті - напочатку 0
     const [questions, setQuestions] = useState([]);
+    //Підвантаження даних - на початку вантажимо - true
     const [loading, setLoading] = useState(true);
+    //Відповідає за помлки, які можуть бути
     const [error, setError] = useState(null);
 
+    //Поточний номер питання в тесті
     const [current, setCurrent] = useState(0);
+    //Що брав користувач - саме питання
     const [selected, setSelected] = useState(null);
+    //Зберігає варіанти відповіді
     const [answers, setAnswers] = useState([]);
+    //Час у секундах для тесту
     const [timeLeft, setTimeLeft] = useState(EXAM_SECONDS);
+    //Фіксує чи ми пройшли тест - на початку ми тільки проходимо тест, ще не кінець
     const [finished, setFinished] = useState(false);
 
     const loadQuestions = useCallback(async () => {
+        //Фіксує, що у нас іде підвантаження даних
         setLoading(true);
-        setError(null);
+        setError(null); //на початку помилок немає
         try {
-            const response = await fetch(TESTS_URL);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const data = await response.json();
-            setQuestions(data);
+            // const response = await fetch(TESTS_URL);
+            // if (!response.ok) {
+            //     throw new Error(`HTTP ${response.status}`);
+            // }
+            // const data = await response.json();
+            //Завантажуємо питання
+            const query = await axios.get(TESTS_URL);
+            //Зберігаємо питання із файлу в data
+            const data = query.data;
+            console.log("List questions", data); //відображеннямо питання на консоль
+
+            setQuestions(data); //Зберігаємо питання в state - в сам компонент
+            //Масив відповідей користувача - він пустий,
+            // але довжина його кількість питань
             setAnswers(new Array(data.length).fill(null));
+            //поточне питання після завантаження
             setCurrent(0);
+            //Яку відповідь обрав користвач
             setSelected(null);
+            //Кількість секунд на тест
             setTimeLeft(EXAM_SECONDS);
-            setFinished(false);
+            setFinished(false); //Тест не завершений
         } catch {
             setError('Не вдалося завантажити питання.');
         } finally {
@@ -45,31 +68,40 @@ const TestsPage = () => {
         }
     }, []);
 
+    //Після ренедер комепонента, ми завантажуємо питання із файлу.
+    //Для цього викликаємо асинхрону функцію async await
+    //Тому, що useEffect не підтримує асихроність
     useEffect(() => {
         loadQuestions();
-    }, [loadQuestions]);
+    }, [loadQuestions]); //Оновлення, якщо змінюється функція - хоча вона стала
 
+    //Цей useEffect запускає таймер
     useEffect(() => {
         if (loading || error || finished) {
             return undefined;
         }
+        //таймер буде спрацьовувати кожну секунду - 1000
         const timer = setInterval(() => {
             setTimeLeft((t) => Math.max(t - 1, 0));
-        }, 1000);
+        }, 1000); //Він буде оновляти часи у верху вікна
         return () => clearInterval(timer);
     }, [loading, error, finished]);
 
+    //Якщо змінюється час, то ми перевіряємо чи не досягли 0, якщо
+    //Час вийшов, то ми завершаємо тест
     useEffect(() => {
         if (timeLeft === 0) {
             setFinished(true);
         }
     }, [timeLeft]);
 
+    //перехід на певний ідекс у питанні
     const goTo = (index) => {
         setCurrent(index);
         setSelected(null);
     };
 
+    //
     // Next question without an answer, searching forward from `from` and wrapping around.
     const nextUnanswered = (list, from) => {
         for (let step = 1; step <= list.length; step++) {
@@ -81,6 +113,7 @@ const TestsPage = () => {
         return -1;
     };
 
+    //Обираємо питання
     const handleChoose = () => {
         if (selected === null) {
             return;
@@ -97,6 +130,7 @@ const TestsPage = () => {
         }
     };
 
+    //пропускаємо питання
     const handleSkip = () => {
         const next = nextUnanswered(answers, current);
         if (next !== -1) {
@@ -104,6 +138,7 @@ const TestsPage = () => {
         }
     };
 
+    //Відображаємо анімацію завантаження
     if (loading) {
         return (
             <div className="container py-5 text-center">
@@ -114,6 +149,7 @@ const TestsPage = () => {
         );
     }
 
+    //Якщо маємо помилку, то її відображаємо на весь екран
     if (error) {
         return (
             <div className="container py-5">
@@ -126,10 +162,12 @@ const TestsPage = () => {
             </div>
         );
     }
-
+    //Пошук правильної відповіді
     const isCorrect = (index) => answers[index] === questions[index].correct;
+    //шукаємо кількість правильних відповідей
     const correctCount = questions.filter((_, i) => isCorrect(i)).length;
 
+    //відображаємо, якщо у нас finish
     if (finished) {
         const passed = correctCount >= PASS_SCORE;
         return (
@@ -167,10 +205,12 @@ const TestsPage = () => {
             </div>
         );
     }
-
+    //отримуємо поточне питання
     const question = questions[current];
+    //Чи є у нас відповідь на дане питання
     const answered = answers[current] !== null;
 
+    //Для застовування класу для відповіді на питання
     const answerClass = (index) => {
         if (!answered) {
             return selected === index ? 'active' : '';
@@ -183,7 +223,7 @@ const TestsPage = () => {
         }
         return '';
     };
-
+    //Класи для відображення номера питань
     const numberClass = (index) => {
         if (index === current) {
             return 'btn-primary';
